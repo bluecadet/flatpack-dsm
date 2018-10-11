@@ -541,9 +541,6 @@ module.exports = function (options) {
     // Merge Options
     initFlatPack(options);
 
-    // Build out files
-    // buildEcho();
-
   } catch (e) {
     handleError(e);
   }
