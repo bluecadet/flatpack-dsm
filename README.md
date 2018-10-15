@@ -2,15 +2,20 @@
 
 Connect to Invision DSM, grab color and type vars, icons via gulp.
 
+*Note: At this time, the DSM project must be set to public.*
+
 ## Usage
 
-In gulp:
+`npm install --save-dev flatpack-dsm`
+
+In gulp, set the DSM urls (example using Gulp 4):
 
 ```
 const gulp = require('gulp');
 const flatpackDSM = require('../flatpack-dsm');
 
 gulp.task('default', done => {
+
   flatpackDSM({
     urls: {
       json: 'https://bluecadet.invisionapp.com/dsm-export/bluecadet/greene-space/style-data.json?exportFormat=list',
@@ -29,7 +34,7 @@ gulp.task('default', done => {
 {
   dest: {
     colorVars: {
-      name: 'vars.colors',  // Name for color vars file
+      name: 'vars.colors',   // Name for color vars file
       path: '/scss',         // Path for color vars file
     },
     typeVars: {
