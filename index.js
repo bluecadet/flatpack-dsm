@@ -51,7 +51,9 @@ let fpackColorData = {};
 
 
 
-
+//
+// Write a sass file, replace existing vars in file
+//
 function fpackWriteSassFile(name, fileBasePath, newData) {
 
   // Check for scss extension, add if not present
