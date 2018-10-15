@@ -6,6 +6,7 @@ const fs           = require('fs');
 const request      = require('request');
 const mkdirp       = require('mkdirp');
 const unzip        = require('unzip');
+const decompress = require('decompress');
 const globmove     = require('glob-move');
 const rimraf       = require('rimraf');
 const indentString = require('indent-string');
@@ -17,16 +18,17 @@ const parseCSS     = require('./src/parseCSS.js');
 //
 const fpackDefaultOpts = {
   dest: {
-    colorVars: {
-      name: 'vars.colors',
-      path: '/scss',
-    },
-    typeVars: {
-      name: 'vars.type',
-      path: '/scss',
-    },
+    colors: '/scss/vars.colors.scss',
+    type: '/scss/vars.type.scss',
     icons: '/icons',
     json: false
+  },
+  fractal: {
+    enable: false,          // boolean
+    colors: {
+      file: '/components/colors/colors.config.json',
+      context: 'context.colors'
+    }
   },
   opts: {
     colorPrefix: 'color-',
@@ -54,40 +56,37 @@ let fpackColorData = {};
 //
 // Write a sass file, replace existing vars in file
 //
-function fpackWriteSassFile(name, fileBasePath, newData) {
+function fpackWriteSassFile(fileBasePath, newData) {
 
-  // Check for scss extension, add if not present
-  let fileName = name;
-  let ext = fileName.split('.').pop();
-
-  if (ext !== 'scss') {
-    fileName = `${fileName}.scss`;
-  }
-
-  let filePath = path.normalize(`${fileBasePath}/${fileName}`);
+  const filePath = path.normalize(fileBasePath);
 
   // Grab the sass file
   fs.readFile(filePath, 'utf8', function(err, data){
 
-    // On error, create file if possible, add newData
     if (err) {
 
-      mkdirp(fileBasePath);
+      mkdirp(path.dirname(fileBasePath));
 
       fs.writeFile(filePath, newData, (err) => {
-        if(err) {
-          var error = new Error("Error reading sass file");
-          console.log(colors.red(error.message));
+
+        if (err) {
+          var error = new Error(`Error writing new sass file @ ${filePath}`);
+          handleError(error);
           return;
         }
-        console.log(colors.green(`Created ${filePath}`));
+
+        console.log(
+          colors.green(`\u2713 Created`),
+          colors.cyan(`${filePath.replace(localPath, '')}`)
+        );
+
       });
 
     } else {
 
       // Create regex to replace data
-      var oldData = new RegExp(/\/\/\/ START DSM VARIABLES[\s\S]*END DSM VARIABLES/gim);
-      var testReplace = oldData.test(data);
+      const oldData = new RegExp(/\/\/\/ START DSM VARIABLES[\s\S]*END DSM VARIABLES/gim);
+      const testReplace = oldData.test(data);
 
       if ( testReplace ) {
         var replaceData = data.replace(oldData, newData);
@@ -95,10 +94,11 @@ function fpackWriteSassFile(name, fileBasePath, newData) {
         // Write the new data to the file
         fs.writeFile(filePath, replaceData, 'utf8', (err) => {
           if ( err ) {
-            var error = new Error("Error writing sass file");
-            console.log(colors.red(error.message));
+            var error = new Error('Error writing updated sass file');
+            handleError(error);
             return;
           }
+
           console.log(
             colors.green(`\u2713 DSM Font Style variables updated in`),
             colors.cyan(`${filePath.replace(localPath, '')}`)
@@ -110,7 +110,7 @@ function fpackWriteSassFile(name, fileBasePath, newData) {
         // Regex has failed
         var error = new Error("Can not find variable matches.");
         console.log(
-          colors.red("Can not find variable matches. Please wrap DSM wariables as:\n"),
+          colors.red("Can not find variable matches. Please add or wrap DSM variables as:\n"),
           colors.cyan("/// START DSM VARIABLES\n"),
           colors.cyan("$var: val;\n"),
           colors.cyan("$etc: etc;\n"),
@@ -155,7 +155,6 @@ const fpackParseColors = () => {
       }
     }
 
-
   }
   // Support basic JSON url
   else {
@@ -173,23 +172,6 @@ const fpackParseColors = () => {
     return;
   }
 
-  // Get sass file
-  const fileOpts = fpackOpts.dest.colorVars;
-  const filePathBase = path.normalize(`${localPath}/${fileOpts.path}`);
-
-  // Check for scss extension, add if not present
-  let fileName = fileOpts.name,
-      ext = fileOpts.name.split('.').pop();
-
-  if (ext !== 'scss') {
-    fileName = fileName + '.scss';
-  }
-
-  // Build filepath
-  const filePath = path.normalize(`${filePathBase}/${fileName}`);
-
-  // Iterate through colors, build sassVar string with wrapping
-  // comments for regex
   let newData = '/// START DSM VARIABLES\n';
 
   Object.keys(fpackColors).forEach(function(colorName) {
@@ -205,58 +187,10 @@ const fpackParseColors = () => {
 
   newData += '/// END DSM VARIABLES';
 
-  // Grab the sass file
-  fs.readFile(filePath, 'utf8', function(err, data){
-
-    // On error, create file if possible, add newData
-    if (err) {
-
-      mkdirp(filePathBase);
-
-      fs.writeFile(filePath, newData, (err) => {
-        if(err) {
-          var error = new Error("Error reading sass file");
-          console.log(colors.red(error.message));
-          return;
-        }
-        console.log(colors.green(`Created ${fileOpts.path}/${fileName}`));
-      });
-
-    } else {
-
-      // Create regex to replace data
-      var oldData = new RegExp(/\/\/\/ START DSM VARIABLES[\s\S]*END DSM VARIABLES/gim);
-      var testReplace = oldData.test(data);
-
-      if ( testReplace ) {
-        var replaceData = data.replace(oldData, newData);
-
-        // Write the new data to the file
-        fs.writeFile(filePath, replaceData, 'utf8', (err) => {
-          if(err) {
-            var error = new Error("Error writing sass file");
-            console.log(colors.red(error.message));
-            return;
-          }
-          console.log(colors.green(`\u2713 DSM Color variables updated in`), colors.cyan(`${fileOpts.path}/${fileName}`));
-        });
-
-      } else {
-
-        // Regex has failed
-        var error = new Error("Can not find variable matches.");
-        console.log(
-          colors.red("Can not find variable matches. Please wrap DSM wariables as:\n"),
-          colors.cyan("/// START DSM VARIABLES\n"),
-          colors.cyan("$var: val;\n"),
-          colors.cyan("$etc: etc;\n"),
-          colors.cyan("/// END DSM VARIABLES\n")
-        );
-        return;
-      }
-
-    }
-  });
+  fpackWriteSassFile(
+    path.normalize(`${localPath}/${fpackOpts.dest.colors}`),
+    newData
+  );
 
 }
 
@@ -265,32 +199,30 @@ const fpackParseColors = () => {
 const fpackParseTypeStyles = () => {
 
   var typeStyles = fpackJSON.list.typeStyles;
-  fpackType = [];
 
-  // if (Array.isArray(typeStyles)) {
+  let newData = '/// START DSM VARIABLES\n';
 
-    let newData = '/// START DSM VARIABLES\n';
+  typeStyles.forEach((typeStyle) => {
+    // Properly format DSM typestyle name
+    let tsName = typeStyle['name'].replace(/\//g, '-');
+        tsName = tsName.replace(/ /g, '');
 
-    typeStyles.forEach((typeStyle) => {
-      let tsName = typeStyle['name'].replace(/\//g, '-');
-          tsName = tsName.replace(/ /g, '');
-      const mixinName = fpackOpts.opts.typePrefix + tsName;
+    // Format name with prefixe
+    const mixinName = fpackOpts.opts.typePrefix + tsName;
 
-      let mixin = `@mixin ${mixinName.toLowerCase()} {\n`;
-      mixin += indentString(parseCSS(typeStyle, fpackOpts, fpackColorData), fpackOpts.opts.indent);
-      mixin += '}\n\n';
+    // Build mixin content
+    let mixin = `@mixin ${mixinName.toLowerCase()} {\n` +
+                 indentString(parseCSS(typeStyle, fpackOpts, fpackColorData), fpackOpts.opts.indent) +
+                 '}\n\n';
 
-      newData += mixin;
+    newData += mixin;
 
-    });
+  });
 
-    newData += '/// END DSM VARIABLES';
-
-  // }
+  newData += '/// END DSM VARIABLES';
 
   fpackWriteSassFile(
-    fpackOpts.dest.typeVars.name,
-    path.normalize(`${localPath}/${fpackOpts.dest.typeVars.path}`),
+    path.normalize(`${localPath}/${fpackOpts.dest.type}`),
     newData
   );
 
@@ -310,12 +242,9 @@ const fpackParseFontStyles = () => {
 
   Object.keys(fpackType).forEach(function(typeName) {
 
-    const mixinName = fpackOpts.opts.typePrefix + typeName;
-    const t = fpackType[typeName];
-
-    let mixin = `@mixin ${mixinName} {\n`;
-    mixin += indentString(parseCSS(t, fpackOpts, fpackColorData), fpackOpts.opts.indent);
-    mixin += '}\n\n';
+    let mixin = `@mixin ${fpackOpts.opts.typePrefix + typeName} {\n` +
+                 indentString(parseCSS(fpackType[typeName], fpackOpts, fpackColorData), fpackOpts.opts.indent) +
+                 '}\n\n';
 
     newData += mixin;
 
@@ -324,10 +253,32 @@ const fpackParseFontStyles = () => {
   newData += '/// END DSM VARIABLES';
 
   fpackWriteSassFile(
-    fpackOpts.dest.typeVars.name,
-    path.normalize(`${localPath}/${fpackOpts.dest.typeVars.path}`),
+    path.normalize(`${localPath}/${fpackOpts.dest.type}`),
     newData
   );
+
+}
+
+
+//
+// Parse Color JSON and write to Fractal context
+//
+const fpackParseFractalColors = () => {
+
+  const filePath = path.normalize(`${localPath}/${fpackOpts.fractal.colors.file}`);
+  let fractalConfig = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  fractalConfig.context[fpackOpts.fractal.colors.context] = fpackColorData;
+  fractalConfig = JSON.stringify(fractalConfig, null, 2);
+
+  fs.writeFile(filePath, fractalConfig, function(err){
+    if (err) {
+      var error = new Error('Cannot write Fractal file');
+      handleError(error);
+      return;
+    }
+
+    console.log(colors.green(`\u2713 DSM data updated in Fractal \`context.${fpackOpts.fractal.colors.context}\``), colors.cyan(`${fpackOpts.fractal.colors.file}`));
+  });
 
 }
 
@@ -340,53 +291,31 @@ const fpackParseFontStyles = () => {
 //
 //
 const fpackGetDSMJSON = () => {
-  https.get(fpackOpts.urls.json, (response) => {
-    const { statusCode } = response;
-    const contentType = response.headers['content-type'];
 
-    let error;
-    if (statusCode !== 200) {
-      error = new Error('Request Failed.\n' +
-                        `Status Code: ${statusCode}`);
-    }
-    // else if (!/^application\/json/.test(contentType)) {
-    //   error = new Error('Invalid content-type.\n' +
-    //                     `Expected application/json but received ${contentType}`);
-    // }
-    if (error) {
-      console.error(error.message);
-      // consume response data to free up memory
-      response.resume();
+  request({url: fpackOpts.urls.json, encoding: 'utf8'}, function(err, resp, body) {
+
+    if (err) {
+      var error = new Error('');
+      handleError(error);
       return;
     }
 
-    response.setEncoding('utf8');
-    let rawData = '';
+    fpackJSON = JSON.parse(body);
 
-    response.on('data', (chunk) => { rawData += chunk; });
+    fpackParseColors();
 
-    response.on('end', () => {
-      try {
+    if (fpackOpts.fractal.enable) {
+      fpackParseFractalColors();
+    }
 
-        fpackJSON = JSON.parse(rawData);
-        fpackParseColors();
+    if ( fpackJSON.hasOwnProperty('list') ) {
+      fpackParseTypeStyles();
+    } else if ( fpackJSON.hasOwnProperty('fontStyles') && Object.keys(fpackJSON.fontStyles).length > 0 ) {
+      fpackParseFontStyles();
+    } else {
+      console.log(colors.red('No DSM font or type style data.'));
+    }
 
-        if ( fpackJSON.hasOwnProperty('list') ) {
-          fpackParseTypeStyles();
-        } else if ( fpackJSON.hasOwnProperty('fontStyles') && Object.keys(fpackJSON.fontStyles).length > 0 ) {
-          fpackParseFontStyles();
-        } else {
-          console.log(colors.red('No DSM font or type style data.'));
-          return;
-        }
-
-      } catch (e) {
-        console.error(e.message);
-      }
-    });
-
-  }).on('error', (e) => {
-    console.error(`Got error: ${e.message}`);
   });
 }
 
@@ -396,30 +325,24 @@ const fpackGetDSMJSON = () => {
 //
 //
 const fpackGetDSMIcons = () => {
-  const iconsFile = 'icons.zip';
+
   const tmpPath = `${localPath}/DSMICONSTMP`;
-  const iconsZipPath = `${tmpPath}/${iconsFile}`;
   const fileOpts = fpackOpts.dest.icons;
   const filePath = path.normalize(`${localPath}/${fileOpts}`);
 
   request({url: fpackOpts.urls.icons, encoding: null}, function(err, resp, body) {
-    if(err) throw err;
+
+    if (err) {
+      var error = new Error('');
+      handleError(error);
+      return;
+    }
 
     mkdirp(tmpPath);
     mkdirp(filePath);
 
-    // Write the zip file
-    fs.writeFile(iconsZipPath, body, function(err) {
-      if (err) {
-        console.log(err);
-      }
-
-      // Read file and unzip
-      var stream = fs.createReadStream(iconsZipPath)
-        .pipe(unzip.Extract({ path: tmpPath }));
-
-      // After read is complete, move svg files
-      stream.on('finish', () => {
+    decompress(body, tmpPath)
+      .then(() => {
         globmove(`${tmpPath}/**/*.svg`, filePath)
           .then(() => {
             rimraf(tmpPath, function(err){
@@ -428,8 +351,8 @@ const fpackGetDSMIcons = () => {
           });
       });
 
-    });
   });
+
 }
 
 
@@ -440,13 +363,13 @@ const fpackDSM = () => {
 
   if (!fpackOpts.urls.json) {
     var error = new Error('DSM JSON Path required');
-    console.log(colors.red(error.message));
+    handleError(error);
     return;
   }
 
   if (!fpackOpts.urls.icons) {
     var error = new Error('DSM ICON Path required');
-    console.log(colors.red(error.message));
+    handleError(error);
     return;
   }
 
@@ -491,7 +414,7 @@ var handleError = function (e) {
     message: 'An error occurred',
   }, e);
 
-  console.error('FLATPACK ERROR: ' + e.message + '\n', e.stack);
+  console.log(colors.red('FLATPACK ERROR: ' + e.message + '\n'), e.stack);
 
 }
 
@@ -502,7 +425,6 @@ var handleError = function (e) {
 module.exports = function (options) {
 
   try {
-
     // Merge Options
     initFlatPack(options);
 
