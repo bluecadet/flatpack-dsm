@@ -1,17 +1,16 @@
-const _ = require('lodash');
-const colors = require('colors/safe');
-const https = require('https');
-const path = require('path');
-const fs = require('fs');
-const request = require('request');
-const mkdirp = require('mkdirp');
-const unzip = require('unzip');
-const globmove = require('glob-move');
-const rimraf = require('rimraf');
+const _            = require('lodash');
+const colors       = require('colors/safe');
+const https        = require('https');
+const path         = require('path');
+const fs           = require('fs');
+const request      = require('request');
+const mkdirp       = require('mkdirp');
+const unzip        = require('unzip');
+const globmove     = require('glob-move');
+const rimraf       = require('rimraf');
 const indentString = require('indent-string');
-
-const localPath = process.cwd();
-const parseCSS = require('./src/parseCSS.js');
+const localPath    = process.cwd();
+const parseCSS     = require('./src/parseCSS.js');
 
 //
 // Default options
