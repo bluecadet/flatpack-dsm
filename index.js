@@ -30,18 +30,16 @@ const fpackDefaultOpts = {
       context: 'context.colors'
     }
   },
-  opts: {
-    colorPrefix: 'color-',
-    typePrefix: 'type-',
-    indent: 2,
-    replacePx: {
-      enable: false,          // boolean
-      val: 'rem',             // `rem` or `em`
-      remUseTenth: false,     // boolean - use rem tenth calculation (if 12px = 1.2rem)
-      emBase: '16'            // em calculation base
-    },
-    defaultFontWeight: '400'
-  }
+  colorPrefix: 'color-',
+  typePrefix: 'type-',
+  indent: 2,
+  replacePx: {
+    enable: false,          // boolean
+    val: 'rem',             // `rem` or `em`
+    remUseTenth: false,     // boolean - use rem tenth calculation (if 12px = 1.2rem)
+    emBase: '16'            // em calculation base
+  },
+  defaultFontWeight: '400'
 }
 
 // Merged Options
@@ -175,7 +173,7 @@ const fpackParseColors = () => {
   let newData = '/// START DSM VARIABLES\n';
 
   Object.keys(fpackColors).forEach(function(colorName) {
-    const sassName = fpackOpts.opts.colorPrefix + colorName;
+    const sassName = fpackOpts.colorPrefix + colorName;
     const sassVal = fpackColors[colorName];
     const sassVar = `$${sassName}: ${sassVal};`;
     newData += sassVar + '\n';
@@ -208,11 +206,11 @@ const fpackParseTypeStyles = () => {
         tsName = tsName.replace(/ /g, '');
 
     // Format name with prefixe
-    const mixinName = fpackOpts.opts.typePrefix + tsName;
+    const mixinName = fpackOpts.typePrefix + tsName;
 
     // Build mixin content
     let mixin = `@mixin ${mixinName.toLowerCase()} {\n` +
-                 indentString(parseCSS(typeStyle, fpackOpts, fpackColorData), fpackOpts.opts.indent) +
+                 indentString(parseCSS(typeStyle, fpackOpts, fpackColorData), fpackOpts.indent) +
                  '}\n\n';
 
     newData += mixin;
@@ -242,8 +240,8 @@ const fpackParseFontStyles = () => {
 
   Object.keys(fpackType).forEach(function(typeName) {
 
-    let mixin = `@mixin ${fpackOpts.opts.typePrefix + typeName} {\n` +
-                 indentString(parseCSS(fpackType[typeName], fpackOpts, fpackColorData), fpackOpts.opts.indent) +
+    let mixin = `@mixin ${fpackOpts.typePrefix + typeName} {\n` +
+                 indentString(parseCSS(fpackType[typeName], fpackOpts, fpackColorData), fpackOpts.indent) +
                  '}\n\n';
 
     newData += mixin;

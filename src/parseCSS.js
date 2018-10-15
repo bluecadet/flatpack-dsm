@@ -3,7 +3,7 @@
 //
 const setSizeValue = (pxValue, fpackOpts) => {
   // Determine Strategy
-  var opts = fpackOpts.opts.replacePx;
+  var opts = fpackOpts.replacePx;
 
   if (!opts.enable) {
     return pxValue;
@@ -60,7 +60,7 @@ module.exports = function(style, fpackOpts, fpackColorData) {
       attribute === null ||
       prop === 'textAlign' ||
       ( prop === 'fontStyle' && attribute === 'normal') ||
-      ( prop === 'fontWeight' && attribute === fpackOpts.opts.defaultFontWeight )
+      ( prop === 'fontWeight' && attribute === fpackOpts.defaultFontWeight )
     ) {
       return;
     }

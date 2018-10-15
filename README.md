@@ -33,27 +33,26 @@ gulp.task('default', done => {
 ```
 {
   dest: {
-    colorVars: {
-      name: 'vars.colors',   // Name for color vars file
-      path: '/scss',         // Path for color vars file
-    },
-    typeVars: {
-      name: 'vars.type',     // Name for type vars file
-      path: '/scss',         // Path for type vars file
-    },
-    icons: '/icons'          // Path icons should be placed
+    colors: '/scss/vars.colors.scss',                 // Path for color vars file
+    type: '/scss/vars.type.scss',                     // Path for type vars file
+    icons: '/icons'                                   // Path icons should be placed
   },
-  opts: {
-    colorPrefix: 'color-',   // Prefix for sass color variables
-    typePrefix: 'type-',     // Prefix for sass type variables
-    indent: 2,               // Integer - indent value for css
-    replacePx: {
-      enable: false,         // Boolean - if px values should be replaced
-      val: 'rem',            // Replacement value - `rem` or `em`
-      remUseTenth: false,    // Boolean - use rem tenth calculation (if 12px = 1.2rem)
-      emBase: '16'           // em calculation base
-    },
-    defaultFontWeight: '400' // Default font weight (deletes `font-weight` attributes with matching value)
-  }
+  fractal: {
+    enable: false,                                    // boolean
+    colors: {
+      file: '/components/colors/colors.config.json',  // Path to a fractal config.json file
+      context: 'context.colors'                       // Fractal context path (single depth)
+    }
+  },
+  colorPrefix: 'color-',   // Prefix for sass color variables
+  typePrefix: 'type-',     // Prefix for sass type variables
+  indent: 2,               // Integer - indent value for css
+  replacePx: {
+    enable: false,         // Boolean - if px values should be replaced
+    val: 'rem',            // Replacement value - `rem` or `em`
+    remUseTenth: false,    // Boolean - use rem tenth calculation (if 12px = 1.2rem)
+    emBase: '16'           // em calculation base
+  },
+  defaultFontWeight: '400' // Default font weight (deletes `font-weight` attributes with matching value)
 }
 ```
