@@ -5,7 +5,6 @@ const path         = require('path');
 const fs           = require('fs');
 const request      = require('request');
 const mkdirp       = require('mkdirp');
-const unzip        = require('unzip');
 const decompress = require('decompress');
 const globmove     = require('glob-move');
 const rimraf       = require('rimraf');
@@ -54,7 +53,7 @@ let fpackColorData = {};
 //
 // Write a sass file, replace existing vars in file
 //
-function fpackWriteSassFile(fileBasePath, newData) {
+function fpackWriteSassFile(fileBasePath, newData, variableType) {
 
   const filePath = path.normalize(fileBasePath);
 
@@ -98,7 +97,7 @@ function fpackWriteSassFile(fileBasePath, newData) {
           }
 
           console.log(
-            colors.green(`\u2713 DSM Font Style variables updated in`),
+            colors.green(`\u2713 DSM ${variableType} variables updated in`),
             colors.cyan(`${filePath.replace(localPath, '')}`)
           );
         });
@@ -187,7 +186,8 @@ const fpackParseColors = () => {
 
   fpackWriteSassFile(
     path.normalize(`${localPath}/${fpackOpts.dest.colors}`),
-    newData
+    newData,
+    'Color'
   );
 
 }
@@ -221,7 +221,8 @@ const fpackParseTypeStyles = () => {
 
   fpackWriteSassFile(
     path.normalize(`${localPath}/${fpackOpts.dest.type}`),
-    newData
+    newData,
+    'Type Style'
   );
 
 }
@@ -252,7 +253,8 @@ const fpackParseFontStyles = () => {
 
   fpackWriteSassFile(
     path.normalize(`${localPath}/${fpackOpts.dest.type}`),
-    newData
+    newData,
+    'Font Style'
   );
 
 }
