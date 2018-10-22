@@ -31,6 +31,7 @@ const fpackDefaultOpts = {
   },
   colorPrefix: 'color-',
   typePrefix: 'type-',
+  svgToPHP: false,
   indent: 2,
   replacePx: {
     enable: false,          // boolean
@@ -122,9 +123,6 @@ function fpackWriteSassFile(fileBasePath, newData, variableType) {
 
 
 
-
-
-
 //
 // Parse colors, add to file
 //
@@ -194,6 +192,9 @@ const fpackParseColors = () => {
 
 
 
+//
+// Parse type styles, add files
+//
 const fpackParseTypeStyles = () => {
 
   var typeStyles = fpackJSON.list.typeStyles;
@@ -229,7 +230,7 @@ const fpackParseTypeStyles = () => {
 
 
 //
-// Parse type styles, add files
+// Parse font styles, add files
 //
 const fpackParseFontStyles = () => {
 
@@ -285,7 +286,6 @@ const fpackParseFractalColors = () => {
 
 
 
-
 //
 // GET DSM JSON DATA
 //
@@ -320,6 +320,7 @@ const fpackGetDSMJSON = () => {
 }
 
 
+
 //
 // GET DSM JSON DATA
 //
@@ -341,10 +342,27 @@ const fpackGetDSMIcons = () => {
     mkdirp(tmpPath);
     mkdirp(filePath);
 
-    decompress(body, tmpPath)
+    decompress(body, tmpPath, {
+      map: file => {
+        if ( fpackOpts.svgToPHP ) {
+          console.log(file.path);
+          file.path = `${tmpPath}/${file.path}.php`;
+          console.log(file.path);
+        }
+        return file;
+      }
+    })
       .then(() => {
-        globmove(`${tmpPath}/**/*.svg`, filePath)
+
+        var fileGlobPath = fpackOpts.svgToPHP ? `${tmpPath}/**/*.php` : `${tmpPath}/**/*.svg`;
+
+        globmove(fileGlobPath, filePath)
           .then(() => {
+
+            if ( fpackOpts.svgToPHP ) {
+
+            }
+
             rimraf(tmpPath, function(err){
               console.log(colors.green(`\u2713 DSM Icons added to`), colors.cyan(`${fpackOpts.dest.icons}`));
             });
